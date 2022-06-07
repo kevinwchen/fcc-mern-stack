@@ -1,20 +1,20 @@
 // create variable to store ref to db
 let restaurants
 
-export default class RestaurantsDao {
+export default class RestaurantsDAO {
     // injectDB method for initial connection to database
     // starts when server starts
     static async injectDB(conn) {
         if (restaurants) {
             return
         }
-    }
-    try {
-        restaurants = await conn.db(process.env.RESTREVIEWS_NS).collection("restaurants")
-    } catch (e) {
-        console.error (
-            `Unable to establish a collection handle in restaurantsDAO: ${e}`,
-        )
+        try {
+            restaurants = await conn.db(process.env.RESTREVIEWS_NS).collection("restaurants")
+        } catch (e) {
+            console.error (
+                `Unable to establish a collection handle in restaurantsDAO: ${e}`,
+            )
+        }
     }
 
     static async getRestaurants({
@@ -46,7 +46,15 @@ export default class RestaurantsDao {
         const displayCursor = cursor.limit(restaurantsPerPage).skip(restaurantsPerPage * page)
 
         try {
-            const restaurantsList = await displayCursor.
+            const restaurantsList = await displayCursor.toArray()
+            const totalNumRestaurants = await restaurants.countDocuments(query)
+
+            return { restaurantsList}
+        } catch (e) {
+            console.error (
+                `Unable to convert cursor to array or probhlem counting documents, ${e}`
+            )
+            return { restaurantsList: [], totalNumRestaurants: 0}
         }
     }
 }
